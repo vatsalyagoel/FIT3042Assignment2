@@ -31,8 +31,8 @@
 	{
 		float hue;
 		float saturation;
-		float value;
-	} HSV;
+		float lightness;
+	} HSL;
 #endif
 
 /*********************************************************
@@ -46,7 +46,7 @@
 	typedef struct
 	{
 		RGB *rgb;
-		HSV *hsv;
+		HSL *hsl;
 	} PPMPixel;
 #endif
 
@@ -70,7 +70,8 @@
 #endif
 
 #define RGB_COMPONENT_COLOR 255
-
-
+#define HUE_UPPER_LIMIT 360.0
+#define PI 3.14159265
+	
 void skip_comment(FILE *ppm);
 PPMImage *read_ppm_data(FILE *ppm);
