@@ -31,7 +31,10 @@ int to_number(char *str_to_num)
 int main(int argc, char *argv[])
 {
 	/* int brightness = 50, contrast = 50, saturation = 50; */
-	/* FILE *ppm_file; */
+	FILE *ppm_file;
+	char magic_no[3];
+	char dimensions[20];
+	char maxval[20];
 
 	if(argc < 2)
 	{
@@ -43,7 +46,14 @@ int main(int argc, char *argv[])
 
 	/* printf("%d\n", delay); */
 
-	/* ppm_file = fopen("/home/vatsalya/Documents/3042/Assignment/Assignment 1/ppm/sonic-0001.ppm", "r"); */
+	ppm_file = fopen("/home/vatsalya/Documents/3042/rlefiles/test/image-0001.ppm", "r");
+	fgets(magic_no, 3, stdin);
+	//fgets(dimensions, 256, stdin);
+	fgets(dimensions, 256, stdin);
+	//fgets(maxval, 128, stdin);
+	fgets(maxval, 128, stdin);
+
+	printf("%s",dimensions);
 
 	SDL_Window *window = NULL;
 	SDL_Surface *screen_surface = NULL;
@@ -67,7 +77,10 @@ int main(int argc, char *argv[])
 			screen_surface = SDL_GetWindowSurface(window);
 			SDL_FillRect(screen_surface, NULL, SDL_MapRGB(screen_surface -> format, 0xff, 0x00, 0xff));
 			SDL_UpdateWindowSurface(window);
-			sleep(DELAY);
+			SDL_Delay(DELAY*1000);
+			SDL_FillRect(screen_surface, NULL, SDL_MapRGB(screen_surface -> format, 0xff, 0x00, 0x00));
+			SDL_UpdateWindowSurface(window);
+			SDL_Delay(DELAY*1000);
 		}
 	}
 
