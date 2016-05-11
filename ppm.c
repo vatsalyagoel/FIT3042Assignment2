@@ -2,12 +2,17 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
+#include <unistd.h>
 
 #include <SDL.h>
 
 #include "ppm.h"
 
 int DELAY;
+SDL_Window *window = NULL;
+SDL_Surface *screen_surface = NULL;
+PPMImage *PPM_IMAGE = NULL;
+int TIMER_ID = 0;
 
 int to_number(char *str_to_num)
 {
@@ -165,10 +170,19 @@ PPMImage *read_ppm_data(FILE *ppm)
 	PPMImage *img;
 	char c;
 	int row, col ,index = 0;
-
+	int count = 0;
 	img = (PPMImage *)malloc(sizeof(PPMImage));
 
 	c = fgetc(ppm);
+	while(c == -1 && (c != 'P' || c == 'p'))
+	{
+		c = fgetc(ppm);
+		count++;
+		if(count > 2)
+		{
+			exit(0);
+		}
+	}
 	if(c == 'P' || c == 'p')
 	{
 		img -> magic_number[0] = c;
@@ -217,7 +231,9 @@ PPMImage *read_ppm_data(FILE *ppm)
 			index++;
 		}
 	}
-
+	c = fgetc(ppm);
+	printf("%x\n", c);
+	ungetc(c, ppm);
 	return img;
 }
 
@@ -313,6 +329,31 @@ void change_contrast(PPMImage *img, float factor)
 	}
 }
 
+Uint32 make_window(Uint32 interval, void* param)
+{
+	// char c;	
+	PPMImage *ppm_image = param;
+	SDL_SetWindowSize(window, ppm_image -> width, ppm_image -> height);
+	screen_surface = SDL_GetWindowSurface(window);
+	int row, col ,index = 0;
+	for (row = 0; row < ppm_image -> height; row++)
+	{
+		for (col = 0; col < ppm_image -> width; col++)
+		{
+			int *p = screen_surface -> pixels + row * screen_surface -> pitch + col * screen_surface -> format -> BytesPerPixel; 
+			int r = ppm_image -> pixels[index].rgb -> red;
+			int g = ppm_image -> pixels[index].rgb -> green;
+			int b = ppm_image -> pixels[index].rgb -> blue;
+			*p = SDL_MapRGB(screen_surface -> format, r, g, b);
+			index++;
+		}
+	}
+	// SDL_FillRect(screen_surface, NULL, SDL_MapRGB(screen_surface -> format, 0xff, 0x00, 0xff));
+	SDL_UpdateWindowSurface(window);
+	fprintf(stdout, "%d\n", SDL_GetTicks());
+	return interval;
+}
+
 int main(int argc, char *argv[])
 {
 	float brightness = 50, contrast = 50, saturation = 50;
@@ -348,13 +389,11 @@ int main(int argc, char *argv[])
 	brightness = brightness*2/100 -1;
 	contrast = contrast*2/100 -1;
 	saturation = saturation*2/100 -1;
-
-	ppm_file = fopen("/home/vatsalya/Documents/3042/rlefiles/test/image-0016.ppm", "r");
-	ppm_image = read_ppm_data(ppm_file);
-
-	SDL_Window *window = NULL;
-	SDL_Surface *screen_surface = NULL;
-
+	int curr_time = 0;
+	ppm_file = fopen("/home/vatsalya/Documents/3042/Assignment/Assignment 2/abc.ppm", "r");
+	// ppm_file = fopen("/home/vatsalya/Documents/3042/rlefiles/test/sonic-test-0003 (copy).ppm", "r");
+	// ppm_file = stdin;
+	char c;
 
 	if(SDL_Init(SDL_INIT_VIDEO) < 0)
 	{
@@ -362,34 +401,36 @@ int main(int argc, char *argv[])
 	}
 	else
 	{
-		window = SDL_CreateWindow("ppmplayer", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, ppm_image -> width,
-			ppm_image -> height, SDL_WINDOW_SHOWN);
-	
+		window = SDL_CreateWindow("ppmplayer", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 0,
+		0, SDL_WINDOW_SHOWN);
 		if(window == NULL)
 		{
 			fprintf(stderr, "Window could not be created! SDL_Error: %s\n", SDL_GetError());
 		}
 		else
 		{
-			screen_surface = SDL_GetWindowSurface(window);
-			int row, col ,index = 0;
-			for (row = 0; row < ppm_image -> height; row++)
+			c = fgetc(ppm_file);
+			if(c  == 'P')
 			{
-				for (col = 0; col < ppm_image -> width; col++)
+				ungetc(c, ppm_file);
+				ppm_image = read_ppm_data(ppm_file);
+
+				while(1)
 				{
-					int *p = screen_surface -> pixels + row * screen_surface -> pitch + col * screen_surface -> format -> BytesPerPixel; 
-					int r = ppm_image -> pixels[index].rgb -> red;
-					int g = ppm_image -> pixels[index].rgb -> green;
-					int b = ppm_image -> pixels[index].rgb -> blue;
-					*p = SDL_MapRGB(screen_surface -> format, r, g, b);
-					index++;
+					curr_time = SDL_GetTicks();
+					if (curr_time % (DELAY) == 0)
+					{
+						printf("%d\n", curr_time);
+						make_window(DELAY*1000, ppm_image);
+						c = fgetc(ppm_file);
+						if(c == -1)
+						{
+							ppm_image = read_ppm_data(ppm_file);
+						}
+					}
 				}
 			}
-			// SDL_FillRect(screen_surface, NULL, SDL_MapRGB(screen_surface -> format, 0xff, 0x00, 0xff));
-			SDL_UpdateWindowSurface(window);
-			SDL_Delay(DELAY*1000);
 		}
 	}
-
 	return 0;
 }
