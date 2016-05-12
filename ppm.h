@@ -72,6 +72,11 @@
 #define RGB_COMPONENT_COLOR 255
 #define HUE_UPPER_LIMIT 360.0
 #define PI 3.14159265
-	
-void skip_comment(FILE *ppm);
-PPMImage *read_ppm_data(FILE *ppm);
+
+PPMImage *read_ppm_data(FILE *ppm, float brightness_factor, float contrast_factor, float saturation_factor);
+void alter_pixel(PPMPixel *pixel, float brightness_factor, float contrast_factor, float saturation_factor);
+
+int DELAY;
+SDL_Window *window;
+SDL_Surface *screen_surface;
+int running;
